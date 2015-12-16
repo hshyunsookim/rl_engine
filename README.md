@@ -2,4 +2,4 @@
 
 Reinforcement Learning Engine 
 
-in progress for ai-korea game rl project
+(in progress for ai-korea game rl project)
