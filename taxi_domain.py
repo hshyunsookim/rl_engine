@@ -2,7 +2,6 @@
 
 import numpy as np
 import sys
-import pdb
 from random import randint
 
 # Create map 

@@ -11,11 +11,11 @@ s = dm.gameState()
 s.setStates(xt,yt,xp,yp,pickup, xg,yg)
 
 # Set parameters and variables
-alpha = 0.5   # Learning rate
-gamma = 0.9   # Discount factor
-epsilon = 0.25 # Exploration factor (exploration vs. exploitation)
-lamda = 0.5   # Eligibility trace decay rate 
-			  # (didn't want to overwrite python built-in name "lambda" here)
+alpha = 0.5    # Learning rate
+gamma = 0.9    # Discount factor
+epsilon = 0.1 # Exploration factor (exploration vs. exploitation)
+lamda = 0.5    # Eligibility trace decay rate 
+			   # (didn't want to overwrite python built-in name "lambda" here)
 
 
 numMoves = 0  # Count number of moves in an episode
@@ -26,10 +26,10 @@ def evaluatePolicy(state):
 		Q_values = state.Q.get(s)
 
 		# for each state, choose argmax_a Q(s,a) 
-		maxVal = max(Q_values)
-		maxIndices = findMaxInd(maxVal, Q_values)
-		maxIdx = r.randint(0,len(maxIndices)-1)
-		greedy_action = maxIndices[maxIdx]		
+		maxVal = max(Q_values)						# max_a Q(s,a)
+		maxIndices = findMaxInd(maxVal, Q_values)	# index of maximum Q (0~5)
+		maxIdx = r.randint(0,len(maxIndices)-1)		# random tie-break 
+		greedy_action = maxIndices[maxIdx]+1		# choose greedy aciton (index+1, 1~6) 
 		state.pi[(s)] = greedy_action
 
 
@@ -64,14 +64,26 @@ def printOrderedQ():
 		print state, value
 	raw_input(" ")
 
+def printOrderedQnE():
+	orderedQ = collections.OrderedDict(sorted(s.Q.items()))
+	for state, value in orderedQ.iteritems():
+		print state, value, s.e.get((state))
+	raw_input(" ")
+
+
 
 for i in range(51):
-	numMoves = 0
 	(xt,yt,xp,yp,pickup), (xg,yg) = [[0,0,0,4,0],[4,4]]
+	# (xt,yt,xp,yp,pickup), (xg,yg) = [[4,4,4,4,1],[4,4]]
 	s.setStates(xt,yt,xp,yp,pickup, xg,yg)
 	s.clearTraces()	
 	# retain Q-function from previous episode	
 	# printOrderedQ()
+	### printOrderedQnE()
+	### print numMoves
+
+	numMoves = 0
+
 
 	## Time = t0
 	# Store current state (state at time t0)
@@ -83,11 +95,10 @@ for i in range(51):
 	else:
 		a_t0 = r.randint(1,6)
 
-	# Table look-up for Q-value at (s,a) 
-	Qval_curr = s.getValue(a_t0)
-
-
 	while not s.checkEoE():
+		# Table look-up for Q-value at (s,a) 
+		Qval_curr = s.getValue(a_t0)
+
 		# Eligibility Trace 
 		s.updateEtrace(a_t0, lamda)
 		# printEtrace()
@@ -115,19 +126,21 @@ for i in range(51):
 		# TD-error
 		delta = reward + gamma*Qval_next - Qval_curr
 
+		#### print reward, Qval_next, Qval_curr
 
 		# Update Q
 		for key in s.Q.keys():
 			values = s.e.get((key))
 			for actions in range(len(values)):
-				newVal = s.Q.get((key))[actions] + values[actions-1]*alpha*delta
+				newVal = s.Q.get((key))[actions-1] + values[actions-1]*alpha*delta
 				s.setValue(key, actions, newVal)
 		
+
+		# print s_t0, a_t0, Qval_curr, s_t1, a_t1, Qval_next, s.Q.get((s_t0))[a_t0-1]
 
 		## Take a time-step
 		s_t0 = s_t1
 		a_t0 = a_t1
-		Qval_curr = Qval_next
 
 		# Update the policy for the new Q-function 
 		evaluatePolicy(s)
@@ -136,6 +149,9 @@ for i in range(51):
 		numMoves += 1
 		if numMoves%1000 == 0:
 			print "."
+		if numMoves > 10000:
+			print "quit"
+			break
 		#print "Eps #", i, "  Move #", numMoves, "  State: ", s_t0, "  Action: ", a_t0
 
 	print "End of Episode: ", i, " in ", numMoves, " moves"
