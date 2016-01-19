@@ -1,4 +1,4 @@
-# Tabular Q-learning
+# Tabular Q-learning // SARSA
 
 import taxi_domain as dm
 import random as r
